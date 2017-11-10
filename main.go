@@ -7,12 +7,12 @@ import (
 )
 
 var (
-	maxconn int32 = 1
+	maxConn int32 = 1
 )
 
 func main() {
 	app := gin.Default()
-	lc, err := module.NewLimitConn(maxconn)
+	lc, err := module.NewLimitConn(maxConn)
 
 	if err != nil {
 		//log.Printf("[APP-error] "+"APP start error: %s", err)

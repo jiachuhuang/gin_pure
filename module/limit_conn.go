@@ -9,19 +9,19 @@ import (
 type LimitConn struct {
 	sync.Mutex
 	conn int32
-	maxconn int32
+	maxConn int32
 	status int
 }
 
-func NewLimitConn(maxconn int32) (lc *LimitConn, err error) {
-	if maxconn > 65536 {
+func NewLimitConn(maxConn int32) (lc *LimitConn, err error) {
+	if maxConn > 65536 {
 		lc = nil
 		err = errors.New("connection limit must be less 65536")
 	}
 
 	lc = &LimitConn{
 		conn:0,
-		maxconn:maxconn,
+		maxConn:maxConn,
 		status:503,
 	}
 	return
@@ -30,7 +30,7 @@ func NewLimitConn(maxconn int32) (lc *LimitConn, err error) {
 func LimitConnAcquire(lc *LimitConn) gin.HandlerFunc {
 	return func(context *gin.Context) {
 		lc.Lock()
-		if lc.conn >= lc.maxconn {
+		if lc.conn >= lc.maxConn {
 			context.AbortWithStatusJSON(lc.status, "too many connection")
 			lc.Unlock()
 			return
