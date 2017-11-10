@@ -1,5 +1,6 @@
 package cache
 
+
 type RedisCache struct {
 	dns string
 	password string
@@ -15,7 +16,6 @@ func NewRedisCache() Cache {
 }
 
 func (this *RedisCache) Init(config string) (error) {
-
 	return nil
 }
 
