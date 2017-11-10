@@ -19,7 +19,8 @@ func main() {
 		return
 	}
 
-	v1 := app.Group("v1", module.LimitConnAcquire(lc))
+	v1 := app.Group("v1")
+	v1.Use(module.LimitConnAcquire(lc))
 	{
 		home := new(controller.HomeController)
 		v1.GET("/", home.Index)
