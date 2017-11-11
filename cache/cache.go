@@ -1,12 +1,15 @@
 package cache
 
-import "strings"
+import (
+	"strings"
+	"time"
+)
 
 type Cache interface {
 	Init(config string) (error)
-	Get(key interface{}) (val interface{})
-	Set(key interface{}, data interface{}) (bool, error)
-	Delete(key interface{}) (bool, error)
+	Get(key string) (val interface{})
+	Set(key string, data interface{}, expire time.Duration) (bool, error)
+	Delete(key string) (bool, error)
 	Flush() (bool, error)
 }
 
@@ -51,15 +54,15 @@ func (this *cache) Init(config string) (error) {
 	return this.driver.Init(config)
 }
 
-func (this *cache) Get(key interface{}) (val interface{}) {
-	return nil
+func (this *cache) Get(key string) (val interface{}) {
+	return this.driver.Get(key)
 }
 
-func (this *cache) Set(key interface{}, data interface{}) (bool, error) {
-	return true, nil
+func (this *cache) Set(key string, data interface{}, expire time.Duration) (bool, error) {
+	return this.driver.Set(key, data, expire)
 }
 
-func (this *cache) Delete(key interface{}) (bool, error) {
+func (this *cache) Delete(key string) (bool, error) {
 	return true, nil
 }
 

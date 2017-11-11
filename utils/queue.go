@@ -8,7 +8,7 @@ type Queue struct {
 type QNode struct {
 	prev *QNode
 	next *QNode
-	value interface{}
+	Value interface{}
 }
 
 func NewQueue() *Queue {

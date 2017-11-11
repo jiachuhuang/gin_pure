@@ -5,6 +5,7 @@ import (
 	"strings"
 	"errors"
 	"strconv"
+	"time"
 )
 
 type RedisCache struct {
@@ -69,15 +70,15 @@ func (this *RedisCache) paserConfig(config string) (map[string]string, error) {
 	return options, nil
 }
 
-func (this *RedisCache) Get(key interface{}) (val interface{}) {
+func (this *RedisCache) Get(key string) (val interface{}) {
 	return nil
 }
 
-func (this *RedisCache) Set(key interface{}, data interface{}) (bool, error) {
+func (this *RedisCache) Set(key string, data interface{}, expire time.Duration) (bool, error) {
 	return true, nil
 }
 
-func (this *RedisCache) Delete(key interface{}) (bool, error) {
+func (this *RedisCache) Delete(key string) (bool, error) {
 	return true, nil
 }
 

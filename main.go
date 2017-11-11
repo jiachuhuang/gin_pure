@@ -4,6 +4,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"pure/controller"
 	"pure/module"
+	"pure/cache"
+	"pure/utils"
 )
 
 var (
@@ -18,6 +20,9 @@ func main() {
 		//log.Printf("[APP-error] "+"APP start error: %s", err)
 		return
 	}
+
+	c := cache.NewCache("memory@256")
+	utils.SetVar("cache", c, false)
 
 	v1 := app.Group("v1")
 	v1.Use(module.LimitConnAcquire(lc))

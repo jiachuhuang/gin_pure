@@ -5,10 +5,11 @@ import (
 	"pure/utils"
 	"strconv"
 	"errors"
+	"time"
 )
 
 type MemoryCache struct{
-	sync.Mutex
+	sync.RWMutex
 	lruQueue *utils.Queue
 	set map[string]MemoryCacheNode
 	sum int
@@ -18,6 +19,8 @@ type MemoryCache struct{
 type MemoryCacheNode struct {
 	data interface{}
 	n *utils.QNode
+	expire time.Duration
+	createTime time.Time
 }
 
 func init() {
@@ -25,7 +28,7 @@ func init() {
 }
 
 func NewMemoryCache() Cache{
-	return &MemoryCache{lruQueue: utils.NewQueue(), num:0}
+	return &MemoryCache{lruQueue: utils.NewQueue(), set: make(map[string]MemoryCacheNode), num:0}
 }
 
 func (this *MemoryCache) Init(config string) (error) {
@@ -42,21 +45,46 @@ func (this *MemoryCache) Init(config string) (error) {
 	return nil
 }
 
-func (this *MemoryCache) Get(key interface{}) (val interface{}) {
+func (this *MemoryCache) Get(key string) (val interface{}) {
+	this.RLock()
+	defer this.RUnlock()
+
+	if mcn, ok := this.set[key]; ok {
+		if mcn.isExpire() {
+			this.lruQueue.RemoveNode(mcn.n)
+			delete(this.set, key)
+			return nil
+		}
+		return mcn.data
+	}
 	return nil
 }
 
-func (this *MemoryCache) Set(key interface{}, data interface{}) (bool, error) {
+func (this *MemoryCache) Set(key string, data interface{}, expire time.Duration) (bool, error) {
+	this.Lock()
+	defer this.Unlock()
 
+	n := &utils.QNode{Value: key}
+	this.lruQueue.InsertHeader(n)
+	mcn := MemoryCacheNode{data, n, expire, time.Now()}
+	this.set[key] = mcn
 	return true, nil
 }
 
-func (this *MemoryCache) Delete(key interface{}) (bool, error) {
+func (this *MemoryCache) Delete(key string) (bool, error) {
 	return true, nil
 }
 
 func (this *MemoryCache) Flush() (bool, error) {
 	return true, nil
+}
+
+func (mcn MemoryCacheNode) isExpire() bool {
+	if mcn.expire == 0  {
+		return false
+	}
+
+	return time.Now().Sub(mcn.createTime) > mcn.expire
 }
 
 
