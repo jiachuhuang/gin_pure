@@ -53,6 +53,7 @@ func (this *MemoryCache) Get(key string) (val interface{}) {
 		if mcn.isExpire() {
 			this.lruQueue.RemoveNode(mcn.n)
 			delete(this.set, key)
+			this.num--
 			return nil
 		}
 		return mcn.data
@@ -64,10 +65,20 @@ func (this *MemoryCache) Set(key string, data interface{}, expire time.Duration)
 	this.Lock()
 	defer this.Unlock()
 
+	if this.num >= this.sum {
+		tn := this.lruQueue.GetTailNode()
+		if tn != nil{
+			delete(this.set, tn.Value.(string))
+			this.lruQueue.RemoveNode(tn)
+			this.num--
+		}
+	}
+
 	n := &utils.QNode{Value: key}
 	this.lruQueue.InsertHeader(n)
 	mcn := MemoryCacheNode{data, n, expire, time.Now()}
 	this.set[key] = mcn
+	this.num++
 	return true, nil
 }
 

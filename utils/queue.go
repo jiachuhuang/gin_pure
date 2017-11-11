@@ -54,3 +54,11 @@ func (q *Queue) RemoveNode(n *QNode) {
 	n.next = nil
 }
 
+func (q *Queue) GetTailNode() *QNode {
+	return q.tail
+}
+
+func (q *Queue) GetHeaderNode() *QNode {
+	return q.root
+}
+
