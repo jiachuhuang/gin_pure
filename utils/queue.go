@@ -62,3 +62,8 @@ func (q *Queue) GetHeaderNode() *QNode {
 	return q.root
 }
 
+func (q *Queue) Clear() {
+	q.root = nil
+	q.tail = nil
+}
+

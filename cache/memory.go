@@ -83,10 +83,24 @@ func (this *MemoryCache) Set(key string, data interface{}, expire time.Duration)
 }
 
 func (this *MemoryCache) Delete(key string) (bool, error) {
+	this.Lock()
+	defer this.Unlock()
+
+	if mcn, ok := this.set[key]; ok {
+		this.lruQueue.RemoveNode(mcn.n)
+		delete(this.set, key)
+		this.num--
+	}
 	return true, nil
 }
 
 func (this *MemoryCache) Flush() (bool, error) {
+	this.Lock()
+	this.Unlock()
+
+	this.lruQueue.Clear()
+	this.num = 0
+	this.set = make(map[string]MemoryCacheNode)
 	return true, nil
 }
 
