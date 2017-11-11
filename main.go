@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	maxConn int32 = 1
+	maxConn int32 = 10000
 )
 
 func main() {

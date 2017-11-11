@@ -71,17 +71,33 @@ func (this *RedisCache) paserConfig(config string) (map[string]string, error) {
 }
 
 func (this *RedisCache) Get(key string) (val interface{}) {
-	return nil
+	v, err := this.client.Get(key).Result()
+	if err != nil{
+		return nil
+	}
+	return v
 }
 
 func (this *RedisCache) Set(key string, data interface{}, expire time.Duration) (bool, error) {
+	err := this.client.Set(key, data, expire).Err()
+	if err != nil {
+		return false, err
+	}
 	return true, nil
 }
 
 func (this *RedisCache) Delete(key string) (bool, error) {
+	err := this.client.Del(key).Err()
+	if err != nil {
+		return false, err
+	}
 	return true, nil
 }
 
 func (this *RedisCache) Flush() (bool, error) {
+	err := this.client.FlushAll().Err()
+	if err != nil {
+		return false, err
+	}
 	return true, nil
 }
