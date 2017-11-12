@@ -117,30 +117,6 @@ func (lq *LimitReq) Acquire(key string) (int, time.Duration) {
 	}
 }
 
-//func (lq *LimitReq) Acquire() (int, time.Duration){
-//	lq.Lock()
-//	defer lq.Unlock()
-
-	//now := time.Now()
-	//excess := lq.excess - (lq.rate * now.Sub(lq.last).Nanoseconds() / 1000000000) + 1000
-	//if excess < 0 {
-	//	excess = 0
-	//}
-	//
-	//if excess > lq.capacity {
-	//	return LQBUSY, 0
-	//} else if excess == 0 {
-	//	lq.last = now
-	//	lq.excess = excess
-	//	return LQOK, 0
-	//} else {
-	//	waitTms := time.Duration(excess * 1000 / lq.rate)  * time.Millisecond
-	//	lq.last = now
-	//	lq.excess = excess
-	//	return LQWAIT, waitTms
-	//}
-//}
-
 func LimitReqAcquire(lq *LimitReq) gin.HandlerFunc {
 	return func(context *gin.Context) {
 		key, err := lq.GetSetKey(context)

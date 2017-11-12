@@ -3,18 +3,18 @@ package main
 import (
 	"github.com/gin-gonic/gin"
 	"pure/controller"
-	"pure/module"
 	"pure/cache"
 	"pure/utils"
+	"pure/module"
 )
 
 
 func main() {
 	app := gin.Default()
-	lq, err := module.NewLimitReq("5000r/s",5)
+	lq, err := module.NewLimitReq("100r/s",5,2,1024)
 
 	if err != nil {
-		//log.Printf("[APP-error] "+"APP start error: %s", err)
+	//	//log.Printf("[APP-error] "+"APP start error: %s", err)
 		return
 	}
 
