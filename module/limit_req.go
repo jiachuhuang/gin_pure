@@ -58,7 +58,8 @@ func NewLimitReq(r string, cap int64, m uint8, qs int) (*LimitReq, error){
 		capacity:cap * 1000,
 		set:make(map[string]*LimitReqNode),
 		lruQueue:utils.NewQueue(),
-		mode:m,qsize:qs,
+		mode:m,
+		qsize:qs,
 		}
 	return lq,nil
 }
