@@ -8,13 +8,10 @@ import (
 	"pure/utils"
 )
 
-var (
-	maxConn int32 = 10000
-)
 
 func main() {
 	app := gin.Default()
-	lc, err := module.NewLimitConn(maxConn)
+	lq, err := module.NewLimitReq("5000r/s",5)
 
 	if err != nil {
 		//log.Printf("[APP-error] "+"APP start error: %s", err)
@@ -25,7 +22,7 @@ func main() {
 	utils.SetVar("cache", c, false)
 
 	v1 := app.Group("v1")
-	v1.Use(module.LimitConnAcquire(lc))
+	v1.Use(module.LimitReqAcquire(lq))
 	{
 		home := new(controller.HomeController)
 		v1.GET("/", home.Index)
