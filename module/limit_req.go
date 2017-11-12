@@ -53,7 +53,14 @@ func NewLimitReq(r string, cap int64, m uint8, qs int) (*LimitReq, error){
 		return nil, err
 	}
 
-	return &LimitReq{rate:rate,capacity:cap * 1000,set:make(map[string]*LimitReqNode),lruQueue:utils.NewQueue(),mode:m,qsize:qs},nil
+	lq := &LimitReq{
+		rate:rate,
+		capacity:cap * 1000,
+		set:make(map[string]*LimitReqNode),
+		lruQueue:utils.NewQueue(),
+		mode:m,qsize:qs,
+		}
+	return lq,nil
 }
 
 func (lq *LimitReq) GetSetKey(context *gin.Context) (string, error) {
