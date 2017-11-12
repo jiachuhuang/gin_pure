@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"github.com/gin-gonic/gin"
 	"sync"
+	"pure/utils"
 )
 
 const (
@@ -15,29 +16,89 @@ const (
 	LQWAIT = 0x100
 )
 
+const (
+	LQMDEFAULT uint8 = 1 << iota
+	LQMIP
+	LQMEND
+)
+
 type LimitReq struct {
 	sync.Mutex
 	rate int64
 	capacity int64
-	last time.Time
-	excess int64
+	mode uint8
+	set map[string]*LimitReqNode
+	lruQueue *utils.Queue
+	qsize int
+	qlen int
 }
 
-func NewLimitReq(r string, cap int64) (*LimitReq, error){
+type LimitReqNode struct {
+	last time.Time
+	excess int64
+	n *utils.QNode
+}
+
+func NewLimitReq(r string, cap int64, m uint8, qs int) (*LimitReq, error){
+	if m >= LQMEND {
+		return nil, errors.New("unknown model")
+	}
+
+	if qs < 128 || qs > 65535 {
+		return nil, errors.New("lru queue size[128,65535] is not valid")
+	}
+
 	rate, err := paserRate(r)
 	if err != nil {
 		return nil, err
 	}
 
-	return &LimitReq{rate:rate,capacity:cap * 1000,last:time.Now(),excess:0},nil
+	return &LimitReq{rate:rate,capacity:cap * 1000,set:make(map[string]*LimitReqNode),lruQueue:utils.NewQueue(),mode:m,qsize:qs},nil
 }
 
-func (lq *LimitReq) Acquire() (int, time.Duration){
+func (lq *LimitReq) GetSetKey(context *gin.Context) (string, error) {
+	switch lq.mode {
+	case LQMIP:
+		return context.ClientIP(), nil
+	case LQMDEFAULT:
+		return "default", nil
+	default:
+		return "", errors.New("unknown limit req mode")
+	}
+}
+
+func (lq *LimitReq) Acquire(key string) (int, time.Duration) {
 	lq.Lock()
 	defer lq.Unlock()
 
 	now := time.Now()
-	excess := lq.excess - (lq.rate * now.Sub(lq.last).Nanoseconds() / 1000000000) + 1000
+
+	lrn, ok := lq.set[key]
+	if ok {
+		lq.lruQueue.RemoveNode(lrn.n)
+		lq.lruQueue.InsertHeader(lrn.n)
+	} else {
+		if lq.qlen >= lq.qsize {
+			tn := lq.lruQueue.GetTailNode()
+			_, tnok := tn.Value.(string)
+			if tn != nil && tnok{
+				delete(lq.set, tn.Value.(string))
+				lq.lruQueue.RemoveNode(tn)
+				lq.qlen--
+			} else {
+				lq.qlen = 0
+				lq.set = make(map[string]*LimitReqNode)
+				lq.lruQueue = utils.NewQueue()
+			}
+		}
+		n := &utils.QNode{Value: key}
+		lrn = &LimitReqNode{now,0,n}
+		lq.set[key] = lrn
+		lq.lruQueue.InsertHeader(n)
+		lq.qlen++
+	}
+
+	excess := lrn.excess - (lq.rate * now.Sub(lrn.last).Nanoseconds() / 1000000000) + 1000
 	if excess < 0 {
 		excess = 0
 	}
@@ -45,20 +106,50 @@ func (lq *LimitReq) Acquire() (int, time.Duration){
 	if excess > lq.capacity {
 		return LQBUSY, 0
 	} else if excess == 0 {
-		lq.last = now
-		lq.excess = excess
+		lrn.last = now
+		lrn.excess = excess
 		return LQOK, 0
 	} else {
 		waitTms := time.Duration(excess * 1000 / lq.rate)  * time.Millisecond
-		lq.last = now
-		lq.excess = excess
+		lrn.last = now
+		lrn.excess = excess
 		return LQWAIT, waitTms
 	}
 }
 
+//func (lq *LimitReq) Acquire() (int, time.Duration){
+//	lq.Lock()
+//	defer lq.Unlock()
+
+	//now := time.Now()
+	//excess := lq.excess - (lq.rate * now.Sub(lq.last).Nanoseconds() / 1000000000) + 1000
+	//if excess < 0 {
+	//	excess = 0
+	//}
+	//
+	//if excess > lq.capacity {
+	//	return LQBUSY, 0
+	//} else if excess == 0 {
+	//	lq.last = now
+	//	lq.excess = excess
+	//	return LQOK, 0
+	//} else {
+	//	waitTms := time.Duration(excess * 1000 / lq.rate)  * time.Millisecond
+	//	lq.last = now
+	//	lq.excess = excess
+	//	return LQWAIT, waitTms
+	//}
+//}
+
 func LimitReqAcquire(lq *LimitReq) gin.HandlerFunc {
 	return func(context *gin.Context) {
-		status, waitTms := lq.Acquire()
+		key, err := lq.GetSetKey(context)
+		if err != nil {
+			context.AbortWithStatusJSON(503, "system error")
+			return
+		}
+
+		status, waitTms := lq.Acquire(key)
 
 		switch status {
 		case LQBUSY:
