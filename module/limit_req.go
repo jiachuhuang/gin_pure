@@ -64,7 +64,7 @@ func NewLimitReq(r string, cap int64, m uint8, qs int) (*LimitReq, error){
 	return lq,nil
 }
 
-func (lq *LimitReq) GetSetKey(context *gin.Context) (string, error) {
+func (lq *LimitReq) getSetKey(context *gin.Context) (string, error) {
 	switch lq.mode {
 	case LQMIP:
 		return context.ClientIP(), nil
@@ -106,7 +106,7 @@ func (lq *LimitReq) Acquire(key string) (int, time.Duration) {
 		lq.qlen++
 	}
 
-	excess := lrn.excess - (lq.rate * now.Sub(lrn.last).Nanoseconds() / 1000000000) + 1000
+	excess := lrn.excess - (lq.rate * (now.Sub(lrn.last).Nanoseconds() / 1000000000)) + 1000
 	if excess < 0 {
 		excess = 0
 	}
@@ -127,19 +127,25 @@ func (lq *LimitReq) Acquire(key string) (int, time.Duration) {
 
 func LimitReqAcquire(lq *LimitReq) gin.HandlerFunc {
 	return func(context *gin.Context) {
-		key, err := lq.GetSetKey(context)
+		_, ok := context.Get("limitReqSet")
+		if ok {
+			context.Next()
+			return
+		}
+
+		key, err := lq.getSetKey(context)
 		if err != nil {
 			context.AbortWithStatusJSON(503, "system error")
 			return
 		}
 
 		status, waitTms := lq.Acquire(key)
-
 		switch status {
 		case LQBUSY:
 			context.AbortWithStatusJSON(503, "busy")
 			return
 		case LQWAIT:
+			context.Set("limitReqSet",true)
 			time.Sleep(waitTms)
 		case LQOK:
 			context.Next()
