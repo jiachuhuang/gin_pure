@@ -87,16 +87,24 @@ func (lq *LimitReq) Acquire(key string) (int, time.Duration) {
 		lq.lruQueue.InsertHeader(lrn.n)
 	} else {
 		if lq.qlen >= lq.qsize {
-			tn := lq.lruQueue.GetTailNode()
+			reset := false
+			tn := lq.lruQueue.Pop()
+			if tn == nil {
+				reset = true
+			}
+
 			_, tnok := tn.Value.(string)
-			if tn != nil && tnok{
-				delete(lq.set, tn.Value.(string))
-				lq.lruQueue.RemoveNode(tn)
-				lq.qlen--
-			} else {
+			if !tnok {
+				reset = true
+			}
+
+			if reset {
 				lq.qlen = 0
 				lq.set = make(map[string]*LimitReqNode)
 				lq.lruQueue = utils.NewQueue()
+			} else {
+				delete(lq.set, tn.Value.(string))
+				lq.qlen--
 			}
 		}
 		n := &utils.QNode{Value: key}
