@@ -10,7 +10,7 @@ func init() {
 
 func SetVar(key string, variable interface{}, readOnly bool) {
 	if _, ok := globalVars[key]; ok && readOnly {
-		panic("key:" + key + " has exists")
+		panic("key:" + key + " read only")
 	}
 
 	globalVars[key] = variable
