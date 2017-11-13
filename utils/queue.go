@@ -54,6 +54,42 @@ func (q *Queue) RemoveNode(n *QNode) {
 	n.next = nil
 }
 
+func (q *Queue) Pop() *QNode {
+	if q.tail == nil {
+		return nil
+	}
+
+	n := q.tail
+	if q.tail == q.root {
+		q.root = nil
+		q.tail = nil
+		return n
+	}
+
+	n.prev.next = nil
+	q.tail = n.prev
+	n.prev = nil
+	return n
+}
+
+func (q *Queue) Shift() *QNode {
+	if q.root == nil {
+		return nil
+	}
+
+	n := q.root
+	if q.tail == q.root {
+		q.root = nil
+		q.tail = nil
+		return n
+	}
+
+	n.next.prev = nil
+	q.root = n.next
+	n.next = nil
+	return n
+}
+
 func (q *Queue) GetTailNode() *QNode {
 	return q.tail
 }
