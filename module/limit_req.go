@@ -61,7 +61,7 @@ func NewLimitReq(r string, cap int64, m uint8, qs int) (*LimitReq, error){
 		mode:m,
 		qsize:qs,
 		}
-	return lq,nil
+	return lq, nil
 }
 
 func (lq *LimitReq) getSetKey(context *gin.Context) (string, error) {
