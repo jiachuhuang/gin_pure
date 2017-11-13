@@ -17,7 +17,7 @@ const (
 )
 
 const (
-	LQMDEFAULT uint8 = 1 << iota
+	LQMDEFAULT uint8 = iota + 1
 	LQMIP
 	LQMEND
 )
