@@ -63,7 +63,9 @@ func (this *MemoryCache) NewMemoryCacheNode (data interface{}, expire time.Durat
 }
 
 func (this *MemoryCache) Recycle(mcn *MemoryCacheNode) {
-	this.pool.Put(mcn)
+	if mcn != nil {
+		this.pool.Put(mcn)
+	}
 }
 
 func (mcn *MemoryCacheNode) reset () {

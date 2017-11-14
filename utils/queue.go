@@ -32,7 +32,9 @@ func (q *Queue) NewQNode(value interface{}) *QNode {
 }
 
 func (q *Queue) Recycle(n *QNode) {
-	q.pool.Put(n)
+	if n != nil {
+		q.pool.Put(n)
+	}
 }
 
 func (q *Queue) Empty() bool{
