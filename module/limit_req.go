@@ -98,6 +98,8 @@ func (lq *LimitReq) Acquire(key string) (int, time.Duration) {
 				reset = true
 			}
 
+			lq.lruQueue.Recycle(tn)
+
 			if reset {
 				lq.qlen = 0
 				lq.set = make(map[string]*LimitReqNode)
@@ -107,7 +109,7 @@ func (lq *LimitReq) Acquire(key string) (int, time.Duration) {
 				lq.qlen--
 			}
 		}
-		n := &utils.QNode{Value: key}
+		n := lq.lruQueue.NewQNode(key)
 		lrn = &LimitReqNode{now,0,n}
 		lq.set[key] = lrn
 		lq.lruQueue.InsertHeader(n)

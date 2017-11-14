@@ -1,8 +1,11 @@
 package utils
 
+import "sync"
+
 type Queue struct {
 	root *QNode
 	tail *QNode
+	pool *sync.Pool
 }
 
 type QNode struct {
@@ -12,7 +15,24 @@ type QNode struct {
 }
 
 func NewQueue() *Queue {
-	return &Queue{nil,nil}
+	return &Queue{nil,nil, nil}
+}
+
+func (q *Queue) NewQNode(value interface{}) *QNode {
+	if q.pool == nil {
+		q.pool = &sync.Pool{
+			New: func() interface{} {
+				return &QNode{nil,nil,nil}
+			},
+		}
+	}
+	n := q.pool.Get().(*QNode)
+	n.Reset(value)
+	return n
+}
+
+func (q *Queue) Recycle(n *QNode) {
+	q.pool.Put(n)
 }
 
 func (q *Queue) Empty() bool{
@@ -101,5 +121,11 @@ func (q *Queue) GetHeaderNode() *QNode {
 func (q *Queue) Clear() {
 	q.root = nil
 	q.tail = nil
+}
+
+func (n *QNode) Reset (value interface{}) {
+	n.prev = nil
+	n.next = nil
+	n.Value = value
 }
 
