@@ -24,7 +24,7 @@ func NewRedisCache() Cache {
 }
 
 func (this *RedisCache) Init(config string) (error) {
-	options, err := this.paserConfig(config)
+	options, err := this.parserConfig(config)
 	if err != nil {
 		return err
 	}
@@ -43,7 +43,7 @@ func (this *RedisCache) Init(config string) (error) {
 	return nil
 }
 
-func (this *RedisCache) paserConfig(config string) (map[string]string, error) {
+func (this *RedisCache) parserConfig(config string) (map[string]string, error) {
 	configs := strings.Split(config, "@")
 	if len(configs) < 1 {
 		return nil, errors.New("error redis config")
