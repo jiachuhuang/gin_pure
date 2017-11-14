@@ -1,6 +1,9 @@
 package cache
 
-import "testing"
+import (
+	"testing"
+	"strconv"
+)
 
 func TestNewMemoryCache(t *testing.T) {
 	mc := NewMemoryCache()
@@ -50,4 +53,18 @@ func TestMemoryCache_Set(t *testing.T) {
 	mc.Set("a", "a", 0)
 	v = mc.Get("a")
 	t.Logf("%s", v.(string))
+}
+
+func BenchmarkMemoryCache_Set(b *testing.B) {
+	mc := NewMemoryCache()
+	mc.Init("1024")
+
+	b.StartTimer()
+	var s string
+	for i := 0; i < 100000; i++ {
+		s = strconv.Itoa(i)
+		mc.Set(s,s,0)
+	}
+	b.StopTimer()
+
 }

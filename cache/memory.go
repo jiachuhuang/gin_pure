@@ -99,8 +99,8 @@ func (this *MemoryCache) Set(key string, data interface{}, expire time.Duration)
 		tn := this.lruQueue.GetTailNode()
 		if tn != nil {
 			tmcn := this.set[tn.Value.(string)]
-			delete(this.set, tn.Value.(string))
 			this.Recycle(tmcn)
+			delete(this.set, tn.Value.(string))
 			this.lruQueue.RemoveNode(tn)
 			this.lruQueue.Recycle(tn)
 			this.num--
@@ -109,7 +109,6 @@ func (this *MemoryCache) Set(key string, data interface{}, expire time.Duration)
 
 	n := this.lruQueue.NewQNode(key)
 	this.lruQueue.InsertHeader(n)
-	//mcn := &MemoryCacheNode{data, n, expire, time.Now()}
 	mcn := this.NewMemoryCacheNode(data,expire,n)
 	this.set[key] = mcn
 	this.num++

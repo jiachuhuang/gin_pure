@@ -64,10 +64,14 @@ func (q *Queue) InsertTail(n *QNode) {
 func (q *Queue) RemoveNode(n *QNode) {
 	if n.prev != nil {
 		n.prev.next = n.next
+	} else if n == q.root && n != nil {
+		q.root = n.next
 	}
 
 	if n.next != nil {
 		n.next.prev = n.prev
+	} else if n == q.tail && n != nil {
+		q.tail = n.prev
 	}
 
 	n.prev = nil
