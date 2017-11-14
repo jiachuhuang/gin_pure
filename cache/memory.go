@@ -11,9 +11,10 @@ import (
 type MemoryCache struct{
 	sync.RWMutex
 	lruQueue *utils.Queue
-	set map[string]MemoryCacheNode
+	set map[string]*MemoryCacheNode
 	sum int
 	num int
+	pool *sync.Pool
 }
 
 type MemoryCacheNode struct {
@@ -28,7 +29,7 @@ func init() {
 }
 
 func NewMemoryCache() Cache{
-	return &MemoryCache{lruQueue: utils.NewQueue(), set: make(map[string]MemoryCacheNode), num:0}
+	return &MemoryCache{lruQueue: utils.NewQueue(), set: make(map[string]*MemoryCacheNode), num:0}
 }
 
 func (this *MemoryCache) Init(config string) (error) {
@@ -42,7 +43,34 @@ func (this *MemoryCache) Init(config string) (error) {
 	}
 
 	this.sum = sum
+
+	this.pool = &sync.Pool{
+		New: func() interface{} {
+			return new(MemoryCacheNode)
+		},
+	}
 	return nil
+}
+
+func (this *MemoryCache) NewMemoryCacheNode (data interface{}, expire time.Duration, n *utils.QNode) *MemoryCacheNode {
+	mcn := this.pool.Get().(*MemoryCacheNode)
+	mcn.reset()
+
+	mcn.data = data
+	mcn.expire = expire
+	mcn.n = n
+	return mcn
+}
+
+func (this *MemoryCache) Recycle(mcn *MemoryCacheNode) {
+	this.pool.Put(mcn)
+}
+
+func (mcn *MemoryCacheNode) reset () {
+	mcn.createTime = time.Now()
+	mcn.data = nil
+	mcn.expire = 0
+	mcn.n = nil
 }
 
 func (this *MemoryCache) Get(key string) (val interface{}) {
@@ -54,6 +82,7 @@ func (this *MemoryCache) Get(key string) (val interface{}) {
 			this.lruQueue.RemoveNode(mcn.n)
 			this.lruQueue.Recycle(mcn.n)
 			delete(this.set, key)
+			this.Recycle(mcn)
 			this.num--
 			return nil
 		}
@@ -69,7 +98,9 @@ func (this *MemoryCache) Set(key string, data interface{}, expire time.Duration)
 	if this.num >= this.sum {
 		tn := this.lruQueue.GetTailNode()
 		if tn != nil {
+			tmcn := this.set[tn.Value.(string)]
 			delete(this.set, tn.Value.(string))
+			this.Recycle(tmcn)
 			this.lruQueue.RemoveNode(tn)
 			this.lruQueue.Recycle(tn)
 			this.num--
@@ -78,7 +109,8 @@ func (this *MemoryCache) Set(key string, data interface{}, expire time.Duration)
 
 	n := this.lruQueue.NewQNode(key)
 	this.lruQueue.InsertHeader(n)
-	mcn := MemoryCacheNode{data, n, expire, time.Now()}
+	//mcn := &MemoryCacheNode{data, n, expire, time.Now()}
+	mcn := this.NewMemoryCacheNode(data,expire,n)
 	this.set[key] = mcn
 	this.num++
 	return true, nil
@@ -92,6 +124,7 @@ func (this *MemoryCache) Delete(key string) (bool, error) {
 		this.lruQueue.RemoveNode(mcn.n)
 		this.lruQueue.Recycle(mcn.n)
 		delete(this.set, key)
+		this.Recycle(mcn)
 		this.num--
 	}
 	return true, nil
@@ -103,7 +136,7 @@ func (this *MemoryCache) Flush() (bool, error) {
 
 	this.lruQueue.Clear()
 	this.num = 0
-	this.set = make(map[string]MemoryCacheNode)
+	this.set = make(map[string]*MemoryCacheNode)
 	return true, nil
 }
 
