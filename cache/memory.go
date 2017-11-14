@@ -98,13 +98,11 @@ func (this *MemoryCache) Set(key string, data interface{}, expire time.Duration)
 	defer this.Unlock()
 
 	if this.num >= this.sum {
-		//tn := this.lruQueue.GetTailNode()
 		tn := this.lruQueue.Pop()
 		if tn != nil {
 			tmcn := this.set[tn.Value.(string)]
 			this.Recycle(tmcn)
 			delete(this.set, tn.Value.(string))
-			//this.lruQueue.RemoveNode(tn)
 			this.lruQueue.Recycle(tn)
 			this.num--
 		}
