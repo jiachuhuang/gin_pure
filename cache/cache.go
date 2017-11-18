@@ -63,9 +63,9 @@ func (this *cache) Set(key string, data interface{}, expire time.Duration) (bool
 }
 
 func (this *cache) Delete(key string) (bool, error) {
-	return true, nil
+	return this.driver.Delete(key)
 }
 
 func (this *cache) Flush() (bool, error) {
-	return true, nil
+	return this.driver.Flush()
 }
